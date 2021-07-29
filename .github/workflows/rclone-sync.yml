@@ -2,7 +2,7 @@ name: rclone-sync
 on:
   push:
     branches:
-      - master
+    - master
 jobs:
   AutoDownloaderProcess:
     runs-on: ubuntu-20.04
@@ -10,14 +10,12 @@ jobs:
     - uses: actions/checkout@v2.1.0
     - name: Rclone Install
       run: curl https://rclone.org/install.sh | sudo bash
-   
     - name: Inject Rclone&Aria2 config
       run: |
         mkdir -p ~/.config/rclone/
         cat >  ~/.config/rclone/rclone.conf  << EOF
         ${{ secrets.RCLONE_CONF }}
         EOF
-        
-    - name: rclone-sync
+     - name: rclone-sync
       run: |
         rclone sync od: gd:
