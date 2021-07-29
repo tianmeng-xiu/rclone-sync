@@ -1,6 +1,8 @@
 name: rclone-sync
 on:
-  gollum
+  push:
+    branches:
+      - master
 jobs:
   AutoDownloaderProcess:
     runs-on: ubuntu-20.04
