@@ -2,10 +2,10 @@ name: rclone-sync
 on:
   push:
     branches:
-    - master
+    - main
 jobs:
   rclone-syncProcess:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2.1.0
     - name: Rclone Install
