@@ -11,11 +11,11 @@ jobs:
     - name: Rclone Install
       run: curl https://rclone.org/install.sh | sudo bash
     - name: Inject Rclone&Aria2 config
-      run: |
+      run:
         mkdir -p ~/.config/rclone/
         cat >  ~/.config/rclone/rclone.conf  << EOF
         ${{ secrets.RCLONE_CONF }}
         EOF
-     - name: rclone-sync
-      run: |
+    - name: rclone-sync
+      run:
         rclone sync od: gd:
