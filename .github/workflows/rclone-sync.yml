@@ -16,4 +16,4 @@ jobs:
         EOF
     - name: Rclone Sync
       run: |
-        rclone delete Drivecok Enterprise: --include '*.{html,jpg,png,srt,txt,exe,vtt,torrent,json,nfo}' --fast-list -P
+        rclone delete Drivecok: --include '*.{html,jpg,png,srt,txt,exe,vtt,torrent,json,nfo}' --fast-list -P
