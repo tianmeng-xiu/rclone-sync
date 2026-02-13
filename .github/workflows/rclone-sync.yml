@@ -1,19 +1,75 @@
-name: rclone-sync
+name: Rclone Sync
+
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '启用 Dry Run 模式（仅模拟，不实际同步）'
+        type: boolean
+        default: false
+
 jobs:
   rclone-syncProcess:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2.1.0
-    - name: Rclone Install
-      run: curl https://rclone.org/install.sh | sudo bash
-    - name: Inject Rclone config
-      run: |
-        mkdir -p ~/.config/rclone/
-        cat >  ~/.config/rclone/rclone.conf  << EOF
-        ${{ secrets.RCLONE_CONF }}
-        EOF
-    - name: Rclone Sync
-      run: |
-        rclone sync onedrive: googledrive:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rclone
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+          rclone version
+
+      - name: Set up Rclone config securely
+        env:
+          RCLONE_CONFIG_CONTENT: ${{ secrets.RCLONE_CONF }}
+        run: |
+          mkdir -p "$HOME/.config/rclone"
+          # 使用 printf 避免 EOF 中的缩进/转义问题
+          printf '%s\n' "$RCLONE_CONFIG_CONTENT" > "$HOME/.config/rclone/rclone.conf"
+          chmod 600 "$HOME/.config/rclone/rclone.conf"
+
+      - name: Prepare sync options
+        id: sync_opts
+        run: |
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            echo "DRY_RUN=--dry-run" >> "$GITHUB_ENV"
+            echo "⚠️ DRY RUN 模式：不会执行实际同步！"
+          else
+            echo "DRY_RUN=" >> "$GITHUB_ENV"
+          fi
+
+      - name: Run Rclone Sync
+        env:
+          SOURCE: ${{ vars.SOURCE_REMOTE || 'onedrive:' }}
+          DEST:   ${{ vars.DEST_REMOTE   || 'googledrive:' }}
+        run: |
+          echo "🔄 同步源: $SOURCE"
+          echo "🎯 同步目标: $DEST"
+          echo "🚀 开始执行 rclone sync..."
+
+          rclone sync \
+            ${{ env.DRY_RUN }} \
+            --verbose \
+            --progress \
+            --transfers=8 \
+            --checkers=16 \
+            --contimeout=60s \
+            --timeout=300s \
+            --retries=3 \
+            --low-level-retries=2 \
+            --stats=10s \
+            --drive-use-trash=false \
+            "$SOURCE" "$DEST"
+
+      - name: Sync completed successfully
+        if: success()
+        run: echo "✅ 同步完成！"
+
+      - name: Sync failed – please check logs
+        if: failure()
+        run: |
+          echo "❌ 同步失败！请检查以下内容："
+          echo "1. RCLONE_CONF 是否正确配置？"
+          echo "2. 网盘是否授权且 token 有效？"
+          echo "3. 源和目标路径是否存在？"
